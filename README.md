@@ -4,15 +4,15 @@ A simple (and low-cost) auto-ec2 builder to run [Crafty Control](https://craftyc
 
 The table below is an _estimate_ of the cost as of the writing of this doc. Per month costs based on 12 Hours of uptime per day.
 
-| Service               | p/hr               | p/mo   | Notes                                                            |
-| --------------------- | ------------------ | ------ | ---------------------------------------------------------------- |
-| EC2 t3.Medium         | $0.0416            | $15.00 | On-demand pricing                                                |
-| EBS Root (10GB)       | $0.008             | $0.80  | Boot volume                                                      |
-| EBS Data (10GB)       | $0.008             | $0.80  | Data volume                                                      |
-| S3 Storage (~ 1GB)    | $0.23 /GB          | $0.02  | Backups (deletes after 3 days)                                   |
-| S3 PUT/GET/DELETE ops | negligible         | >$0.01 |                                                                  |
-| Elastic IP            | Free-ish or $0.005 |        | if not attached to a started/stopped instance it will incur cost |
-| Hosted Zone           | -                  | $0.50  | Flat rate of $0.50 per month                                     |
+| Service               | p/hr               | p/mo      | Notes                                                            |
+| --------------------- | ------------------ | --------- | ---------------------------------------------------------------- |
+| EC2 t3.Medium         | $0.0416            | $15.00    | On-demand pricing                                                |
+| EBS Root (10GB)       | $0.008             | $0.80     | Boot volume                                                      |
+| EBS Data (10GB)       | $0.008             | $0.80     | Data volume                                                      |
+| S3 Storage (~ 1GB)    | $0.0000315 /GB     | $0.023/GB | Backups (deletes after 3 days)                                   |
+| S3 PUT/GET/DELETE ops | negligible         | >$0.01    |                                                                  |
+| Elastic IP            | Free-ish or $0.005 |           | if not attached to a started/stopped instance it will incur cost |
+| Hosted Zone           | -                  | $0.50     | Flat rate of $0.50 per month                                     |
 
 ## Prerequisites
 
