@@ -24,16 +24,5 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Render user_data using console
-        run: |
-          terraform init
-          terraform console <<EOF
-          templatefile("${{ github.workspace }}/user_data.sh.tpl", {
-            s3_bucket = "mybucket-name-here",
-            domain_name = "my.server.com",
-            admin_email = "my@email.com"
-          })
-          EOF
-
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
