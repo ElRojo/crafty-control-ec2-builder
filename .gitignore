@@ -1,0 +1,7 @@
+.DS_Store
+terraform.tfvars
+*.auto.tfvars
+*.tfstate
+*.tfstate.*
+.terraform/
+secrets.tfvars

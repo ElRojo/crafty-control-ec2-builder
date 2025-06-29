@@ -1,0 +1,32 @@
+name: Terraform Check
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: HashiCorp - Setup Terraform
+        uses: hashicorp/setup-terraform@v2.0.3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Check Template File
+        run: |
+          echo 'templatefile("${path.module}/user_data.sh.tpl", {s3_bucket="mybucket-name-here", domain_name="my.server.com", admin_email="my@email.com"})' | terraform console
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
