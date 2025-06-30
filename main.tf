@@ -13,6 +13,7 @@ locals {
   ami_owner     = "099720109477"
   ami_name      = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
   aws_region    = "us-west-2"
+  days_expiry   = 3
 }
 
 provider "aws" {
@@ -140,6 +141,23 @@ resource "aws_iam_role_policy" "ec2_s3_policy" {
       ]
     }]
   })
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "crafty_backup_expiry" {
+  bucket = var.s3_bucket
+
+  rule {
+    id     = "delete-old-backups"
+    status = "Enabled"
+
+    filter {
+      prefix = "crafty-servers/"
+    }
+
+    expiration {
+      days = local.days_expiry
+    }
+  }
 }
 
 resource "aws_iam_instance_profile" "ec2_profile" {
