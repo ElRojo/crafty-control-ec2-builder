@@ -123,24 +123,27 @@ COMPOSER
 cat >/usr/local/bin/crafty_backup.sh <<'BACKUP_SCRIPT'
 #!/bin/bash
 set -e
-BUCKET_NAME="${s3_bucket}"
-DATA_DIR="/mnt/minecraft"
+BACKUP_DIR="/mnt/minecraft/backups"
 TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
-DEST_PATH="s3://$BUCKET_NAME/backups/$TIMESTAMP"
-aws s3 sync "$DATA_DIR" "$DEST_PATH"
+S3_BUCKET="${s3_bucket}"
+S3_FOLDER_NAME="crafty-server-backups"
 
-# Delete S3 backup folders older than 3 days
-CUTOFF_DATE=$(date -d '3 days ago' +%s)
-aws s3 ls "s3://$BUCKET_NAME/backups/" | while read -r line; do
-  FOLDER_NAME=$(echo "$line" | awk '{print $4}' | sed 's#/##')
-  if [[ "$FOLDER_NAME" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}$ ]]; then
-    FOLDER_TIMESTAMP=$(date -d "$FOLDER_NAME" +%s 2>/dev/null || true)
-    if [[ -n "$FOLDER_TIMESTAMP" && "$FOLDER_TIMESTAMP" -lt "$CUTOFF_DATE" ]]; then
-      echo "Deleting old backup: $FOLDER_NAME"
-      aws s3 rm "s3://$BUCKET_NAME/backups/$FOLDER_NAME" --recursive
-    fi
+find "$BACKUP_DIR" -type f -name "*.zip" | while read -r ZIP_PATH; do
+  BASENAME=$(basename "$ZIP_PATH" .zip)
+  TIMESTAMPED_NAME="$BASENAME-$TIMESTAMP.zip"
+  TIMESTAMPED_PATH="$BACKUP_DIR/$TIMESTAMPED_NAME"
+  cp "$ZIP_PATH" "$TIMESTAMPED_PATH"
+  S3_PATH="s3://$S3_BUCKET/$S3_FOLDER_NAME/$TIMESTAMPED_NAME"
+  if aws s3 cp "$TIMESTAMPED_PATH" "$S3_PATH"; then
+    rm "$ZIP_PATH"
+    rm "$TIMESTAMPED_PATH"
   fi
 done
+
+# Delete all local files in the backup directory after S3 uploads
+find "$BACKUP_DIR" -type f -delete
+
+echo "Backup complete!"
 BACKUP_SCRIPT
 
 chmod +x /usr/local/bin/crafty_backup.sh
