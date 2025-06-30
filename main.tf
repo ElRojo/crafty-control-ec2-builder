@@ -210,7 +210,7 @@ resource "aws_route53_record" "crafty_dns" {
 }
 
 # EBS Volume
-resource "aws_ebs_volume" "crafty_data" {
+resource "aws_ebs_volume" "crafty_data" { #Separate EBS volume being used to persist through termination of pods (if you'd like to increaes the instance size for example)
   availability_zone = aws_subnet.crafty_subnet.availability_zone
   size              = 10
   type              = "gp3"
