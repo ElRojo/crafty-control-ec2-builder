@@ -11,7 +11,7 @@ The table below is an _estimate_ of the cost as of the writing of this doc. Per 
 | EBS Data (10GB)       | $0.008             | $0.80     | Data volume                                                      |
 | S3 Storage (~ 1GB)    | $0.0000315 /GB     | $0.023/GB | Backups (deletes after 3 days)                                   |
 | S3 PUT/GET/DELETE ops | negligible         | >$0.01    |                                                                  |
-| Elastic IP            | Free-ish or $0.005 |           | if not attached to a started/stopped instance it will incur cost |
+| Elastic IP            | Free-ish or $0.005 |  $1.85    | if not attached to a running instance it will incur cost         |
 | Hosted Zone           | -                  | $0.50     | Flat rate of $0.50 per month                                     |
 
 ## Prerequisites
