@@ -168,6 +168,7 @@ locals {
   ami_owner     = "099720109477"
   ami_name      = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
   aws_region    = "us-west-2"
+  date_expiry   = 3
 }
 ```
 
@@ -175,7 +176,8 @@ locals {
 - `ami_owner` is the canonical owner from the EC2 AMI marketplace
 - `ami_name` is the name of the AMI to filter by. ubuntu-jammy-22.04 is a free subscription as of the writing of this doc.
 - `aws_region` is the region in which you wish to run your services. I chose us-west-2 as it's located close to me.
-
+- `days_expiry` If you set up compressed backups in Crafty, the script in [user_data.sh.tpl](https://github.com/ElRojo/crafty-control-ec2-builder/blob/main/user_data.sh.tpl#L122-L147) will take those zips and upload them to your S3 bucket. By default these are set to expire after 3 days. Local backups are deleted during this step to keep your EBS volume free.
+  
 **[example_terraform.tfvars](./example_terraform.tfvars)** Should be filled out with your own values. Rename it `terraform.tfvars`. The description of these values is in [variables.tf](./variables.tf).
 
 > Note: The domain should be the FQDN (Fully Qualified Domain Name), meaning if you purchased `mycoolserver.com` you need to add the subdomain you'd like to use, such as: `minecraft.mycoolserver.com`
@@ -252,3 +254,8 @@ This can take some time, especially to remove the VPC.
 Remember that after Terraform has destroyed your infrastructure you will still be paying for your Hosted Zone. Remove this hosted zone by going to **"Route 53"** -> **"Hosted Zones"**, click on your domain, and click **"Delete Hosted Zone**"
 
 Optionally, you can remove your key-pair as well by taking similar steps. Key pairs are free, however.
+
+## General Notes
+
+### S3:
+
