@@ -124,19 +124,14 @@ cat >/usr/local/bin/crafty_backup.sh <<'BACKUP_SCRIPT'
 #!/bin/bash
 set -e
 BACKUP_DIR="/mnt/minecraft/backups"
-TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
 S3_BUCKET="${s3_bucket}"
 S3_FOLDER_NAME="crafty-server-backups"
 
 find "$BACKUP_DIR" -type f -name "*.zip" | while read -r ZIP_PATH; do
-  BASENAME=$(basename "$ZIP_PATH" .zip)
-  TIMESTAMPED_NAME="$BASENAME-$TIMESTAMP.zip"
-  TIMESTAMPED_PATH="$BACKUP_DIR/$TIMESTAMPED_NAME"
-  cp "$ZIP_PATH" "$TIMESTAMPED_PATH"
-  S3_PATH="s3://$S3_BUCKET/$S3_FOLDER_NAME/$TIMESTAMPED_NAME"
-  if aws s3 cp "$TIMESTAMPED_PATH" "$S3_PATH"; then
+  BASENAME=$(basename "$ZIP_PATH")
+  S3_PATH="s3://$S3_BUCKET/$S3_FOLDER_NAME/$BASENAME"
+  if aws s3 cp "$ZIP_PATH" "$S3_PATH"; then
     rm "$ZIP_PATH"
-    rm "$TIMESTAMPED_PATH"
   fi
 done
 
