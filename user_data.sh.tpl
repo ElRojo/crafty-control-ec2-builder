@@ -123,22 +123,29 @@ COMPOSER
 cat >/usr/local/bin/crafty_backup.sh <<'BACKUP_SCRIPT'
 #!/bin/bash
 set -e
+
+echo "Starting Crafty backup S3 transfer..."
+
 BACKUP_DIR="/mnt/minecraft/backups"
 S3_BUCKET="${s3_bucket}"
 S3_FOLDER_NAME="crafty-server-backups"
 
-find "$BACKUP_DIR" -type f -name "*.zip" | while read -r ZIP_PATH; do
-  BASENAME=$(basename "$ZIP_PATH")
-  S3_PATH="s3://$S3_BUCKET/$S3_FOLDER_NAME/$BASENAME"
-  if aws s3 cp "$ZIP_PATH" "$S3_PATH"; then
-    rm "$ZIP_PATH"
-  fi
-done
-
-# Delete all local files in the backup directory after S3 uploads
-find "$BACKUP_DIR" -type f -delete
-
-echo "Backup complete!"
+shopt -s nullglob
+dirs=("$BACKUP_DIR"/*)
+if [ $${#dirs[@]} -eq 0 ]; then
+  echo "Nothing to transfer! Exiting."
+else
+  for dir in "$${dirs[@]}"; do
+    BASE_NAME=$(basename "$dir")
+    S3_PATH="s3://$S3_BUCKET/$S3_FOLDER_NAME/$BASE_NAME"
+    if aws s3 cp "$dir" "$S3_PATH" --recursive; then
+      rm -rf "$dir"
+    else
+      echo "Failed to upload $dir to S3"
+    fi
+  done
+    echo "Backup complete!"
+fi
 BACKUP_SCRIPT
 
 chmod +x /usr/local/bin/crafty_backup.sh
