@@ -125,7 +125,7 @@ If your domain is **not purchased through Route 53**, update your registrar’s 
 4. Replace the default name servers with the ones from Route 53 (Namecheap you need to set your name server to "custom")
 5. Save changes
 
-> **Note:** DNS propagation may take up to 48 hours (usually works within 20-60 min) Use [This DNS Checker](https://dnschecker.org/all-dns-records-of-domain.php) to see if the records have been propagated. The NS records should show your entries.
+> **Note:** DNS propagation may take up to 48 hours (usually works within 20-60 min) Use [this DNS checker](https://dnschecker.org/all-dns-records-of-domain.php) to see if the records have been propagated. The NS records should show your entries.
 
 #### Get Your Hosted Zone ID
 
@@ -147,7 +147,7 @@ If your domain is **not purchased through Route 53**, update your registrar’s 
 2. In the left sidebar, click **Key Pairs** under **Network & Security**.
 3. Click **Create key pair**.
 4. Fill out the form:
-   - **Name**: `<Pick a name!>` (or any name)
+   - **Name**: `minecraft-key` (or any name)
    - **Key pair type**: `RSA`
    - **Private key format**: `PEM` (for OpenSSH)
 5. Click **Create key pair**.
@@ -257,5 +257,5 @@ Optionally, you can remove your key-pair as well by taking similar steps. Key pa
 
 ## General Notes
 
-### S3:
+This is meant to be very light-weight and something you can shut down or leave running as much as you'd like. Make sure to set up compressed backups of your server(s) so they can be uploaded to S3.
 
