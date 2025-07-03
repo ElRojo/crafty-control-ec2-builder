@@ -4,15 +4,23 @@ A simple (and low-cost) auto-ec2 builder to run [Crafty Control](https://craftyc
 
 The table below is an _estimate_ of the cost as of the writing of this doc. Per month costs based on 12 Hours of uptime per day.
 
-| Service               | p/hr               | p/mo      | Notes                                                            |
-| --------------------- | ------------------ | --------- | ---------------------------------------------------------------- |
-| EC2 t3.Medium         | $0.0416            | $15.00    | On-demand pricing                                                |
-| EBS Root (10GB)       | $0.008             | $0.80     | Boot volume                                                      |
-| EBS Data (10GB)       | $0.008             | $0.80     | Data volume                                                      |
-| S3 Storage (~ 1GB)    | $0.0000315 /GB     | $0.023/GB | Backups (deletes backups older than 3 days)                      |
-| S3 PUT/GET/DELETE ops | negligible         | >$0.01    |                                                                  |
-| Elastic IP            | Free-ish or $0.005 |  $1.85    | if not attached to a running instance it will incur cost         |
-| Hosted Zone           | -                  | $0.50     | Flat rate of $0.50 per month                                     |
+| Service               | p/hr               | p/mo   | Notes                                                            |
+| --------------------- | ------------------ | ------ | ---------------------------------------------------------------- |
+| EC2 t3.Medium         | $0.0416            | $15.00 | On-demand pricing                                                |
+| EBS Root (10GB)       | $0.008             | $0.80  | Boot volume                                                      |
+| EBS Data (10GB)       | $0.008             | $0.80  | Data volume                                                      |
+| S3 Storage (~ 1GB)    | $0.23 /GB          | $0.02  | Backups (deletes after 3 days)                                   |
+| S3 PUT/GET/DELETE ops | negligible         | >$0.01 |                                                                  |
+| Elastic IP            | Free-ish or $0.005 |        | if not attached to a started/stopped instance it will incur cost |
+| Hosted Zone           | -                  | $0.50  | Flat rate of $0.50 per month                                     |
+
+## Table of Contents:
+
+- [Prerequisites](#prerequisites)
+- [AWS Setup](#aws-setup)
+- [Terraform Setup](#terraform-setup)
+- [Lambda Auto Start/Stop](#lambda-auto-startstop)
+- [Deletion and Cleanup](#deletion-and-cleanup)
 
 ## Prerequisites
 
@@ -125,7 +133,7 @@ If your domain is **not purchased through Route 53**, update your registrar’s 
 4. Replace the default name servers with the ones from Route 53 (Namecheap you need to set your name server to "custom")
 5. Save changes
 
-> **Note:** DNS propagation may take up to 48 hours (usually works within 20-60 min) Use [this DNS checker](https://dnschecker.org/all-dns-records-of-domain.php) to see if the records have been propagated. The NS records should show your entries.
+> **Note:** DNS propagation may take up to 48 hours (usually works within 20-60 min) Use [This DNS Checker](https://dnschecker.org/all-dns-records-of-domain.php) to see if the records have been propagated. The NS records should show your entries.
 
 #### Get Your Hosted Zone ID
 
@@ -136,10 +144,10 @@ If your domain is **not purchased through Route 53**, update your registrar’s 
 
    - It will look something like this:
      ```
-     Z39022Z8NSDLKJDSEXAM
+     Z0017454Z8NSDLKJDSEXAMPLE
      ```
 
-5. Place the ZoneID in the terraformm.tfvars where indicated (`zone_id`)
+5. Place the ZoneID in the terraform/terraformm.tfvars where indicated (`zone_id`)
 
 ### Setting up a Key Pair
 
@@ -147,7 +155,7 @@ If your domain is **not purchased through Route 53**, update your registrar’s 
 2. In the left sidebar, click **Key Pairs** under **Network & Security**.
 3. Click **Create key pair**.
 4. Fill out the form:
-   - **Name**: `minecraft-key` (or any name)
+   - **Name**: `<Pick a name!>` (or any name)
    - **Key pair type**: `RSA`
    - **Private key format**: `PEM` (for OpenSSH)
 5. Click **Create key pair**.
@@ -159,7 +167,7 @@ If your domain is **not purchased through Route 53**, update your registrar’s 
 
 ### File Review
 
-**[main.tf](./main.tf)** includes the following which you should review:
+**[main.tf](terraform/main.tf)** includes the following which you should review:
 
 ```hcl
 # Instance Vars
@@ -167,22 +175,22 @@ locals {
   instance_type = "t3.medium"
   ami_owner     = "099720109477"
   ami_name      = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"
-  aws_region    = "us-west-2"
   days_expiry   = 3
+  cpu_credits   = "standard"
 }
 ```
 
 - `instance_type` can be changed. But in my experience, t3.small would hang upon creating even a single server. I would recommend t3.medium as a minimum.
 - `ami_owner` is the canonical owner from the EC2 AMI marketplace
 - `ami_name` is the name of the AMI to filter by. ubuntu-jammy-22.04 is a free subscription as of the writing of this doc.
-- `aws_region` is the region in which you wish to run your services. I chose us-west-2 as it's located close to me.
-- `days_expiry` If you set up compressed backups in Crafty, the script in [user_data.sh.tpl](https://github.com/ElRojo/crafty-control-ec2-builder/blob/main/user_data.sh.tpl#L122-L147) will take those zips and upload them to your S3 bucket. By default these are set to expire after 3 days. Local backups are deleted during this step to keep your EBS volume free.
-  
-**[example_terraform.tfvars](./example_terraform.tfvars)** Should be filled out with your own values. Rename it `terraform.tfvars`. The description of these values is in [variables.tf](./variables.tf).
+- `days_expiry` is the amount of days that backups will be saved in S3. Default is 3 (meaning any backups older than 3 days will be deleted)
+- `cpu_credits` again another option to try to save some money by reducing the amount of burst-cpu. Standard will keep you from using credits, `unlimited` will allow you to use burst credits. In my experience, `unlimited` is ok with one or two servers.
+
+**[example_terraform.tfvars](terraform/example_terraform.tfvars)** Should be filled out with your own values. Rename it `terraform.tfvars`. The description of these values is in [variables.tf](terraform/variables.tf).
 
 > Note: The domain should be the FQDN (Fully Qualified Domain Name), meaning if you purchased `mycoolserver.com` you need to add the subdomain you'd like to use, such as: `minecraft.mycoolserver.com`
 
-**[user_data.sh.tpl](./user_data.sh.tpl)** is a template file that runs on first-boot of your instance this _runs once_ when the server is **launched**. It does **not** run on each boot/reboot. However, if you terminate an instance and start a new one it will run again; thus, some checks to ensure data integrity are included.
+**[user_data.sh.tpl](terraform/user_data.sh.tpl)** is a template file that runs on first-boot of your instance this _runs once_ when the server is **launched**. It does **not** run on each boot/reboot. However, if you terminate an instance and start a new one it will run again; thus, some checks to ensure data integrity are included.
 
 The tl;dr of this file is that it:
 
@@ -197,7 +205,7 @@ The following variables (in terraform.tfvars) are used in this file and must be 
 - `admin_email`
 - `fqdn`
 
-You can test that this template file compiles correctly by doing the following:
+You can test that this template file compiles correctly by doing the following inside the `terraform` folder:
 
 ```bash
 $ echo 'templatefile("${path.module}/user_data.sh.tpl", {s3_bucket="mybucket-name-here", domain_name="my.server.com", admin_email="my@email.com"})' | terraform console
@@ -235,6 +243,16 @@ $ yes
 
 This will create your AWS resources. At this point you will begin to incur cost. If anything seems off, you can adjust your variables, template, or main.tf and apply the changes via `terraform apply` again. This will make the necessary modifications.
 
+## Lambda Auto Start/Stop
+
+Lambda auto start and stop functionality is enabled by default. This is set up using cron expression which you can learn more about [here](https://crontab.guru). These are set up in Mountain Standard Time and you are able to adjust them as you please. This will help keep costs down by shutting the server down when not in-use.
+
+If you use these lambdas, make sure you have "auto-start" enabled on your minecraft server(s). Otherwise you'll have an EC2 instance running for nothing!
+
+To disable this functionality, set the `enable_lambda` variable to `false`.
+
+The lambda is written in TypeScript and can be found in the [lambda](lambda) folder.
+
 ## Deletion and Cleanup
 
 If you wish to tear down your infrastructure, run:
@@ -254,8 +272,3 @@ This can take some time, especially to remove the VPC.
 Remember that after Terraform has destroyed your infrastructure you will still be paying for your Hosted Zone. Remove this hosted zone by going to **"Route 53"** -> **"Hosted Zones"**, click on your domain, and click **"Delete Hosted Zone**"
 
 Optionally, you can remove your key-pair as well by taking similar steps. Key pairs are free, however.
-
-## General Notes
-
-This is meant to be very light-weight and something you can shut down or leave running as much as you'd like. Make sure to set up compressed backups of your server(s) so they can be uploaded to S3.
-

@@ -1,0 +1,24 @@
+{
+  "name": "lambda",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/handler.js",
+  "scripts": {
+    "build": "tsc",
+    "deploy": "zip -r handler.zip dist node_modules package.json"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.842.0",
+    "aws-lambda": "^1.0.7"
+  },
+  "devDependencies": {
+    "@tsconfig/node22": "^22.0.2",
+    "@types/aws-lambda": "^8.10.122",
+    "@types/node": "^24.0.10",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}

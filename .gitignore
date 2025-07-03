@@ -5,3 +5,4 @@ terraform.tfvars
 *.tfstate.*
 .terraform/
 secrets.tfvars
+node_modules
